@@ -8,76 +8,8 @@
 
 #import <Foundation/Foundation.h>
 #import "GKHWebImageOperationProtocol.h"
-#import <UIKit/UIImage.h>
+#import "GKHWebImageDownloaderUtils.h"
 
-typedef NS_OPTIONS(NSUInteger, GKHWebImageDowloaderOptions){
-    GKHWebImageDowloaderDefault = 1 << 0,
-//    /**
-//     *With this flag,
-//     */
-//    GKHWebImageDowloaderProgressiveDownload = 1 << 0,
-    
-    /**
-     * By default, request prevent the use of NSURLCache. With this flag, NSURLCache
-     * is used with default policies.
-     */
-    GKHWebImageDowloaderUseNSURLCache = 1 << 1,
-    
-    /**
-     * Call completion block with nil image/imageData if the image was read from NSURLCache
-     * (to be combined with `GKHWebImageDownloaderUseNSURLCache`).
-     */
-    GKHWebImageDowloaderIgnoreCachedResponse = 1 << 2,
-    
-    /**
-     * In iOS 4+, continue the download of the image if the app goes to background. This is achieved by asking the system for
-     * extra time in background to let the request finish. If the background task expires the operation will be cancelled.
-     */
-    GKHWebImageDowloaderContinueInBackground = 1 << 3,
-    
-    /**
-     * Handles cookies stored in NSHTTPCookieStore by setting
-     * NSMutableURLRequest.HTTPShouldHandleCookies = YES;
-     */
-    GKHWebImageDowloaderHandleCookies = 1 << 4,
-    
-    /**
-     * Enable to allow untrusted SSL certificates.
-     * Useful for testing purposes. Use with caution in production.
-     */
-    GKHWebImageDowloaderAllowInvalidSSLCertificates = 1 << 5
-};
-
-typedef NS_ENUM(NSUInteger, GKHWebImageDowloaderExecutionOrder) {
-    
-    /**
-     * Default value. All download operations will execute in queue style (first-in-first-out).
-     */
-    GKHWebImageDowloaderFIFOExecutionOrder,
-    
-    /**
-     * All download operations will execute in stack style (last-in-first-out).
-     */
-    GKHWebImageDowloaderLIFOExecutionOrder
-};
-
-typedef NS_ENUM(NSInteger, GKHWebImageOperationQueuePriority) {
-    GKHWebImageOperationQueuePriorityVeryLow = -8L,
-    GKHWebImageOperationQueuePriorityLow = -4L,
-    GKHWebImageOperationQueuePriorityNormal = 0,
-    GKHWebImageOperationQueuePriorityHigh = 4,
-    GKHWebImageOperationQueuePriorityVeryHigh = 8
-};
-
-typedef void(^GKHWebImageDowloaderProgressBlock)(NSUInteger receivedSize, NSUInteger expectedSize);
-
-typedef void(^GKHWebImageDowloaderCompletedBlock)(UIImage *image, NSData *data, NSURL *imageUrl, NSError *error, BOOL isFinished);
-
-typedef void(^GKHWebImageDowloaderCancelBlock)();
-
-typedef NSURLCredential *(^GKHWebImageDownloaderCredential)();
-
-typedef NSDictionary *(^GKHWebImageDownloaderHeadersFilterBlock)(NSURL *imageUrl, NSDictionary *headers);
 
 /**
  *Asynchronous downloader dedicated and optimized for image loading
@@ -115,7 +47,7 @@ typedef NSDictionary *(^GKHWebImageDownloaderHeadersFilterBlock)(NSURL *imageUrl
 /**
  * Changes download operations execution order. Default value is `GKHWebImageDownloaderFIFOExecutionOrder`.
  */
-@property (nonatomic, assign) GKHWebImageDowloaderExecutionOrder executionOrder;
+@property (nonatomic, assign) GKHWebImageDownloaderExecutionOrder executionOrder;
 
 /**
  * This block will be invoked for each downloading image request, returned
@@ -143,7 +75,7 @@ typedef NSDictionary *(^GKHWebImageDownloaderHeadersFilterBlock)(NSURL *imageUrl
  * @return A cancellable GKHWebImageOperationProtocol
  */
 - (id<GKHWebImageOperationProtocol>)dowloadImageWithUrl: (NSURL *)url
-                                              completed: (GKHWebImageDowloaderCompletedBlock)completedBlock;
+                                              completed: (GKHWebImageDownloaderCompletedBlock)completedBlock;
 
 /**
  * Creates a GKHWebImageDownloader async downloader instance with a given URL
@@ -158,8 +90,8 @@ typedef NSDictionary *(^GKHWebImageDownloaderHeadersFilterBlock)(NSURL *imageUrl
  * @return A cancellable GKHWebImageOperationProtocol
  */
 - (id<GKHWebImageOperationProtocol>)dowloadImageWithUrl: (NSURL *)url
-                                                options: (GKHWebImageDowloaderOptions)options
-                                              completed: (GKHWebImageDowloaderCompletedBlock)completedBlock;
+                                                options: (GKHWebImageDownloaderOptions)options
+                                              completed: (GKHWebImageDownloaderCompletedBlock)completedBlock;
 
 /**
  * Creates a GKHWebImageDownloader async downloader instance with a given URL
@@ -175,9 +107,9 @@ typedef NSDictionary *(^GKHWebImageDownloaderHeadersFilterBlock)(NSURL *imageUrl
  * @return A cancellable GKHWebImageOperationProtocol
  */
 - (id<GKHWebImageOperationProtocol>)dowloadImageWithUrl: (NSURL *)url
-                                                options: (GKHWebImageDowloaderOptions)options
-                                               progress: (GKHWebImageDowloaderProgressBlock)progressBlock
-                                              completed: (GKHWebImageDowloaderCompletedBlock)completedBlock;
+                                                options: (GKHWebImageDownloaderOptions)options
+                                               progress: (GKHWebImageDownloaderProgressBlock)progressBlock
+                                              completed: (GKHWebImageDownloaderCompletedBlock)completedBlock;
 
 /**
  * Creates a GKHWebImageDownloader async downloader instance with a given URL
@@ -194,10 +126,10 @@ typedef NSDictionary *(^GKHWebImageDownloaderHeadersFilterBlock)(NSURL *imageUrl
  * @return A cancellable GKHWebImageOperationProtocol
  */
 - (id<GKHWebImageOperationProtocol>)dowloadImageWithUrl: (NSURL *)url
-                                                options: (GKHWebImageDowloaderOptions)options
+                                                options: (GKHWebImageDownloaderOptions)options
                                        operatioPriority: (GKHWebImageOperationQueuePriority)operationPriority
-                                               progress: (GKHWebImageDowloaderProgressBlock)progressBlock
-                                              completed: (GKHWebImageDowloaderCompletedBlock)completedBlock;
+                                               progress: (GKHWebImageDownloaderProgressBlock)progressBlock
+                                              completed: (GKHWebImageDownloaderCompletedBlock)completedBlock;
 
 /**
  * Creates a GKHWebImageDownloader async downloader instance with a given URL
@@ -214,10 +146,10 @@ typedef NSDictionary *(^GKHWebImageDownloaderHeadersFilterBlock)(NSURL *imageUrl
  * @return A cancellable GKHWebImageOperationProtocol
  */
 - (id<GKHWebImageOperationProtocol>)dowloadImageWithUrl: (NSURL *)url
-                                                options: (GKHWebImageDowloaderOptions)options
-                                               progress: (GKHWebImageDowloaderProgressBlock)progressBlock
-                                              completed: (GKHWebImageDowloaderCompletedBlock)completedBlock
-                     cancel: (GKHWebImageDowloaderCancelBlock)cancelBlock;
+                                                options: (GKHWebImageDownloaderOptions)options
+                                               progress: (GKHWebImageDownloaderProgressBlock)progressBlock
+                                              completed: (GKHWebImageDownloaderCompletedBlock)completedBlock
+                     cancel: (GKHWebImageDownloaderCancelBlock)cancelBlock;
 
 /**
  * Creates a GKHWebImageDownloader async downloader instance with a given URL
@@ -235,11 +167,11 @@ typedef NSDictionary *(^GKHWebImageDownloaderHeadersFilterBlock)(NSURL *imageUrl
  * @return A cancellable GKHWebImageOperationProtocol
  */
 - (id<GKHWebImageOperationProtocol>)dowloadImageWithUrl: (NSURL *)url
-                                                options: (GKHWebImageDowloaderOptions)options
+                                                options: (GKHWebImageDownloaderOptions)options
                                        operatioPriority: (GKHWebImageOperationQueuePriority)operationPriority
-                                               progress: (GKHWebImageDowloaderProgressBlock)progressBlock
-                                              completed: (GKHWebImageDowloaderCompletedBlock)completedBlock
-                     cancel: (GKHWebImageDowloaderCancelBlock)cancelBlock;
+                                               progress: (GKHWebImageDownloaderProgressBlock)progressBlock
+                                              completed: (GKHWebImageDownloaderCompletedBlock)completedBlock
+                     cancel: (GKHWebImageDownloaderCancelBlock)cancelBlock;
 
 /**
  * Set a value for a HTTP header to be appended to each download HTTP request.

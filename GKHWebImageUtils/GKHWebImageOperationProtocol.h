@@ -10,6 +10,6 @@
 
 @protocol GKHWebImageOperationProtocol <NSObject>
 
-
+- (void)cancel;
 
 @end
