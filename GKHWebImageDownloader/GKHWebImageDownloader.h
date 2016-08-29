@@ -27,7 +27,7 @@
  * Decompressing images that are downloaded and cached can improve performance but can consume lot of memory.
  * Defaults to YES. Set this to NO if you are experiencing a crash due to excessive memory consumption.
  */
-@property (nonatomic, assign) BOOL isDecompressImages;
+@property (nonatomic, assign) BOOL isDecompressImage;
 
 /**
  * set the max concurrent amount of downloads in the NSOperartionQueue
@@ -37,7 +37,7 @@
 /**
  * Shows the current amount of downloads that still need to be downloaded
  */
-@property (nonatomic, readonly) NSUInteger currentDowloadCount;
+@property (nonatomic, readonly, getter=currentDowloadCount) NSUInteger currentDowloadCount;
 
 /**
  *  The timeout value (in seconds) for the download operation. Default: 15.0.
@@ -127,51 +127,10 @@
  */
 - (id<GKHWebImageOperationProtocol>)dowloadImageWithUrl: (NSURL *)url
                                                 options: (GKHWebImageDownloaderOptions)options
-                                       operatioPriority: (GKHWebImageOperationQueuePriority)operationPriority
+                                       operatioPriority: (GKHWebImageDownloaderOperationQueuePriority)operationPriority
                                                progress: (GKHWebImageDownloaderProgressBlock)progressBlock
                                               completed: (GKHWebImageDownloaderCompletedBlock)completedBlock;
 
-/**
- * Creates a GKHWebImageDownloader async downloader instance with a given URL
- *
- * The delegate will be informed when the image is finish downloaded or an error has happen.
- *
- *
- * @param url            The URL to the image to download
- * @param options        The options to be used for this download
- * @param progressBlock  A block called repeatedly while the image is downloading
- * @param completedBlock A block called once the download is completed
- * @param cancelBlock    A block called once the dowload is canceled
- *
- * @return A cancellable GKHWebImageOperationProtocol
- */
-- (id<GKHWebImageOperationProtocol>)dowloadImageWithUrl: (NSURL *)url
-                                                options: (GKHWebImageDownloaderOptions)options
-                                               progress: (GKHWebImageDownloaderProgressBlock)progressBlock
-                                              completed: (GKHWebImageDownloaderCompletedBlock)completedBlock
-                     cancel: (GKHWebImageDownloaderCancelBlock)cancelBlock;
-
-/**
- * Creates a GKHWebImageDownloader async downloader instance with a given URL
- *
- * The delegate will be informed when the image is finish downloaded or an error has happen.
- *
- *
- * @param url            The URL to the image to download
- * @param options        The options to be used for this download
- * @param operatioPriority represent priority of NSOperation in the NSOperationQueue
- * @param progressBlock  A block called repeatedly while the image is downloading
- * @param completedBlock A block called once the download is completed
- * @param cancelBlock    A block called once the dowload is canceled
- *
- * @return A cancellable GKHWebImageOperationProtocol
- */
-- (id<GKHWebImageOperationProtocol>)dowloadImageWithUrl: (NSURL *)url
-                                                options: (GKHWebImageDownloaderOptions)options
-                                       operatioPriority: (GKHWebImageOperationQueuePriority)operationPriority
-                                               progress: (GKHWebImageDownloaderProgressBlock)progressBlock
-                                              completed: (GKHWebImageDownloaderCompletedBlock)completedBlock
-                     cancel: (GKHWebImageDownloaderCancelBlock)cancelBlock;
 
 /**
  * Set a value for a HTTP header to be appended to each download HTTP request.

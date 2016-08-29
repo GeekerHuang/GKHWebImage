@@ -46,7 +46,9 @@ typedef NS_OPTIONS(NSUInteger, GKHWebImageDownloaderOptions){
      * Enable to allow untrusted SSL certificates.
      * Useful for testing purposes. Use with caution in production.
      */
-    GKHWebImageDownloaderAllowInvalidSSLCertificates = 1 << 5
+    GKHWebImageDownloaderAllowInvalidSSLCertificates = 1 << 5,
+    
+    GKHWebImageDownloaderProgressiveDowload = 1 << 6,    
 };
 
 typedef NS_ENUM(NSUInteger, GKHWebImageDownloaderExecutionOrder) {
@@ -62,19 +64,35 @@ typedef NS_ENUM(NSUInteger, GKHWebImageDownloaderExecutionOrder) {
     GKHWebImageDownloaderLIFOExecutionOrder
 };
 
-typedef NS_ENUM(NSInteger, GKHWebImageOperationQueuePriority) {
-    GKHWebImageOperationQueuePriorityVeryLow = -8L,
-    GKHWebImageOperationQueuePriorityLow = -4L,
-    GKHWebImageOperationQueuePriorityNormal = 0,
-    GKHWebImageOperationQueuePriorityHigh = 4,
-    GKHWebImageOperationQueuePriorityVeryHigh = 8
+typedef NS_ENUM(NSInteger, GKHWebImageDownloaderOperationQueuePriority) {
+    GKHWebImageOperationDownloaderQueuePriorityVeryLow = -8L,
+    GKHWebImageOperationDownloaderQueuePriorityLow = -4L,
+    GKHWebImageOperationDownloaderQueuePriorityNormal = 0,
+    GKHWebImageOperationDownloaderQueuePriorityHigh = 4,
+    GKHWebImageOperationDownloaderQueuePriorityVeryHigh = 8
+};
+
+typedef NS_ENUM(NSUInteger, GKHWebImageDownloaderState){
+    
+    /**
+     *
+     */
+    GKHWebImageDownloaderFinshed = 1,
+    
+    /**
+     *
+     */
+    GKHWebImageDownloaderCancelled,
+    
+    /**
+     *
+     */
+    GKHWebImageDownloaderProgressive
 };
 
 typedef void(^GKHWebImageDownloaderProgressBlock)(NSUInteger receivedSize, NSUInteger expectedSize);
 
-typedef void(^GKHWebImageDownloaderCompletedBlock)(UIImage *image, NSData *data, NSURL *imageUrl, NSError *error, BOOL isFinished);
-
-typedef void(^GKHWebImageDownloaderCancelBlock)();
+typedef void(^GKHWebImageDownloaderCompletedBlock)(UIImage *image, NSData *data, NSURL *imageUrl, GKHWebImageDownloaderState state, NSError *error);
 
 typedef NSURLCredential *(^GKHWebImageDownloaderCredential)();
 
