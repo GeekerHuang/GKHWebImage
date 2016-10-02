@@ -9,8 +9,9 @@
 #import "GKHWebImageDownloaderOperation.h"
 #import "GKHWebImageUtils.h"
 #import <UIKit/UIApplication.h>
-
-static NSString *const GKHWebImageDownloaderDomain = @"GKHWebImageDownloaderDomain";
+#import <ImageIO/ImageIO.h>
+#import "GKHWebImageDecode.h"
+#import "GKHWebImageDownloaderImageProcessor.h"
 
 @interface GKHWebImageDownloaderOperation (/*private*/)<NSURLSessionDataDelegate, NSURLSessionTaskDelegate>
 {
@@ -22,9 +23,8 @@ static NSString *const GKHWebImageDownloaderDomain = @"GKHWebImageDownloaderDoma
 @property (nonatomic, assign, getter=isFinished) BOOL finished;
 
 @property (nonatomic, strong) NSURLSessionDataTask *dataTask;
-@property (nonatomic, strong) NSMutableData *imageData;
-@property (nonatomic, assign) long long expectedContentLength;
 @property (nonatomic, assign) BOOL responseFromCache;
+@property (nonatomic, strong) GKHWebImageDownloaderImageProcessor *downloaderImageProcessor;
 
 @property (nonatomic, strong) NSURLRequest *request;
 
@@ -52,7 +52,6 @@ static NSString *const GKHWebImageDownloaderDomain = @"GKHWebImageDownloaderDoma
 + (void)gkhWebImageNetworkThreadEntryPoint:(id)__unused object {
     @autoreleasepool {
         [[NSThread currentThread] setName:@"com.network.GKHWebImage"];
-        
         NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
         [runLoop addPort:[NSMachPort port] forMode:NSDefaultRunLoopMode];
         [runLoop run];
@@ -82,8 +81,9 @@ static NSString *const GKHWebImageDownloaderDomain = @"GKHWebImageDownloaderDoma
         _options = options;
         _progressBlock = [progressBlock copy];
         _completedBlock = [completedBlock copy];
-        _isDecompressImage = YES;
         _responseFromCache = YES;
+        _downloaderImageProcessor = [[GKHWebImageDownloaderImageProcessor alloc
+                                     ] init];
         _executing = NO;
         _finished = NO;
         _cancelled = NO;
@@ -118,7 +118,7 @@ static NSString *const GKHWebImageDownloaderDomain = @"GKHWebImageDownloaderDoma
 
     NSURLSession *session = _unownedSession;
     if(!session) {
-        if (!_ownedSession) {
+        if (nil == _ownedSession) {
             NSURLSessionConfiguration *sessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
             sessionConfig.timeoutIntervalForRequest = kGKHWebImageTimeoutRequest;
             
@@ -128,16 +128,16 @@ static NSString *const GKHWebImageDownloaderDomain = @"GKHWebImageDownloaderDoma
         session = _ownedSession;
     }
     
-    if(!_dataTask) {
+    if(nil != _dataTask) {
         self.dataTask = [session dataTaskWithRequest:_request];
         [_dataTask resume];
         self.executing = YES;
     }
     
-    if (!_dataTask) {
-        if(!_completedBlock) {
-            NSError *error = [NSError errorWithDomain: GKHWebImageDownloaderDomain code:0 userInfo: @{NSLocalizedDescriptionKey : @"Data task can't be initialized"}];
-            _completedBlock(nil, nil, nil, GKHWebImageDownloaderFinshed, error);
+    if (nil != _dataTask) {
+        if(nil != _completedBlock) {
+            NSError *error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorCode:GKHWebImageDownloaderCompletedNoneRequest code:GKHWebImageDownloaderDefaultCode];
+            _completedBlock([_downloaderImageProcessor completedBlockWithError:error state:GKHWebImageDownloaderFailure]);
             [self done];
         }
     }
@@ -169,11 +169,12 @@ static NSString *const GKHWebImageDownloaderDomain = @"GKHWebImageDownloaderDoma
     
     [super cancel];
     
-    if (_completedBlock) {
-        _completedBlock(nil, nil, nil, GKHWebImageDownloaderCancelled, nil);
+    if (nil != _completedBlock) {
+        NSError *error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorCode:GKHWebImageDownloaderCompletedNone code:GKHWebImageDownloaderDefaultCode];
+        _completedBlock([_downloaderImageProcessor completedBlockWithError:error state:GKHWebImageDownloaderCancel]);
     }
     
-    if (_dataTask) {
+    if (nil != _dataTask) {
         [_dataTask cancel];
     }
     
@@ -202,11 +203,11 @@ static NSString *const GKHWebImageDownloaderDomain = @"GKHWebImageDownloaderDoma
     self.progressBlock = nil;
     self.completedBlock = nil;
     self.request = nil;
-    self.imageData = nil;
+    self.downloaderImageProcessor = nil;
     self.dataTask = nil;
     self.credential = nil;
     
-    if(_ownedSession) {
+    if(nil != _ownedSession) {
         [_ownedSession invalidateAndCancel];
         self.ownedSession = nil;
     }
@@ -231,29 +232,25 @@ didReceiveResponse:(NSURLResponse *)response
             NSInteger statusCode = [((NSHTTPURLResponse *)response) statusCode];
             if (statusCode < 400 && statusCode != 304) {
                 long long expectedContentLength = response.expectedContentLength > 0 ? response.expectedContentLength : 0;
-                self.expectedContentLength = expectedContentLength;
-                self.imageData = [[NSMutableData alloc] initWithCapacity: _expectedContentLength];
-                if(_progressBlock) {
-                    _progressBlock(0, _expectedContentLength);
+                self.downloaderImageProcessor.expectedContentLength = expectedContentLength;
+                if(nil != _progressBlock) {
+                    _progressBlock([_downloaderImageProcessor progressiveBlock]);
                 }
             } else {
+                if(nil != _dataTask) {
+                    [_dataTask cancel];
+                }
                 
-                [_dataTask cancel];
-                
-                if (_completedBlock) {
-                    NSError *error = [NSError errorWithDomain:GKHWebImageDownloaderDomain
-                                                         code:[((NSHTTPURLResponse *)response) statusCode]
-                                                     userInfo:@{NSLocalizedDescriptionKey : @"StatusCode has problems"}];
-                    _completedBlock(nil, nil, nil, GKHWebImageDownloaderFinshed, error);
+                if (nil != _completedBlock) {
+                    NSError *error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorCode:GKHWebImageDownloaderCompletedErrorStatusCode code:[((NSHTTPURLResponse *)response) statusCode]];
+                    _completedBlock([_downloaderImageProcessor completedBlockWithError:error state:GKHWebImageDownloaderFailure]);
                 }
                 [self done];
             }
         } else {
-            if (_completedBlock) {
-                NSError *error = [NSError errorWithDomain:GKHWebImageDownloaderDomain
-                                                     code:0
-                                                 userInfo:@{NSLocalizedDescriptionKey : @"Not http protocol"}];
-                _completedBlock(nil, nil, nil, GKHWebImageDownloaderFinshed, error);
+            if (nil != _completedBlock) {
+                NSError *error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorCode:GKHWebImageDownloaderCompletedNotHttpProtocol code:[((NSHTTPURLResponse *)response) statusCode]];
+                _completedBlock([_downloaderImageProcessor completedBlockWithError:error state:GKHWebImageDownloaderFailure]);
             }
             [self done];
         }
@@ -271,7 +268,11 @@ didReceiveResponse:(NSURLResponse *)response
             dispatch_semaphore_signal(_semaphore);
             return;
         }
-        [_imageData appendData: data];
+        [_downloaderImageProcessor appendData: data];
+        
+        if (nil != _progressBlock) {
+            _progressBlock([_downloaderImageProcessor progressiveBlock]);
+        }
         
         dispatch_semaphore_signal(_semaphore);
     }
@@ -350,11 +351,43 @@ didCompleteWithError:(nullable NSError *)error
             return;
         }
         
+        if (error) {
+            if (nil != _completedBlock) {
+                _completedBlock([_downloaderImageProcessor completedBlockWithError:error state:GKHWebImageDownloaderFailure]);
+            }
+        } else {
+            GKHWebImageDownloaderCompletedBlock completionBlock = _completedBlock;
+            
+            if (nil == [[NSURLCache sharedURLCache] cachedResponseForRequest:_request]) {
+                _responseFromCache = NO;
+            }
+            
+            if (nil == completionBlock) {
+                if ([self shouldIgnoreCachedResponse] && _responseFromCache) {
+                    _completedBlock([_downloaderImageProcessor completedBlockWithError:nil state:GKHWebImageDownloaderFailure]);
+                } else {
+                    completionBlock([_downloaderImageProcessor completedBlock]);
+                }
+            }
+        }
+        
+        [self done];
+        
         dispatch_semaphore_signal(_semaphore);
     }
 }
 
 #pragma mark - Getter And Setter
+
+- (BOOL)isDecompressImage
+{
+    return _downloaderImageProcessor.isDecompressImage;
+}
+
+- (void)setIsDecompressImage:(BOOL)isDecompressImage
+{
+    _downloaderImageProcessor.isDecompressImage = isDecompressImage;
+}
 
 - (BOOL)isAsynchronous
 {
@@ -401,6 +434,11 @@ didCompleteWithError:(nullable NSError *)error
         _finished = finished;
         [self didChangeValueForKey:@"isFinished"];
     }
+}
+
+- (BOOL)shouldIgnoreCachedResponse
+{
+    return _options & GKHWebImageDownloaderIgnoreCachedResponse;
 }
 
 - (BOOL)shouldAllowInvalidSSLCertificates

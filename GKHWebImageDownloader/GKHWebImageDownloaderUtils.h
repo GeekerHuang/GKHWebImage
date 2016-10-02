@@ -10,6 +10,8 @@
 #define GKHWebImageDownloaderUtils_h
 
 #import <UIKit/UIImage.h>
+#import "GKHWebImageDowloaderProgressiveBlock.h"
+#import "GKHWebImageDowloaderCompletedBlock.h"
 
 typedef NS_OPTIONS(NSUInteger, GKHWebImageDownloaderOptions){
     GKHWebImageDownloaderDefault = 1 << 0,
@@ -72,30 +74,12 @@ typedef NS_ENUM(NSInteger, GKHWebImageDownloaderOperationQueuePriority) {
     GKHWebImageOperationDownloaderQueuePriorityVeryHigh = 8
 };
 
-typedef NS_ENUM(NSUInteger, GKHWebImageDownloaderState){
-    
-    /**
-     *
-     */
-    GKHWebImageDownloaderFinshed = 1,
-    
-    /**
-     *
-     */
-    GKHWebImageDownloaderCancelled,
-    
-    /**
-     *
-     */
-    GKHWebImageDownloaderProgressive
-};
+typedef void(^GKHWebImageDownloaderProgressBlock)(GKHWebImageDowloaderProgressiveBlock * _Nonnull progressiveState);
 
-typedef void(^GKHWebImageDownloaderProgressBlock)(NSUInteger receivedSize, NSUInteger expectedSize);
+typedef void(^GKHWebImageDownloaderCompletedBlock)(GKHWebImageDowloaderCompletedBlock * _Nonnull completedState);
 
-typedef void(^GKHWebImageDownloaderCompletedBlock)(UIImage *image, NSData *data, NSURL *imageUrl, GKHWebImageDownloaderState state, NSError *error);
+typedef NSURLCredential * _Nullable(^GKHWebImageDownloaderCredential)();
 
-typedef NSURLCredential *(^GKHWebImageDownloaderCredential)();
-
-typedef NSDictionary *(^GKHWebImageDownloaderHeadersFilterBlock)(NSURL *imageUrl, NSDictionary *headers);
+typedef NSDictionary * _Nullable(^GKHWebImageDownloaderHeadersFilterBlock)(NSURL *_Nullable imageUrl, NSDictionary * _Nullable headers);
 
 #endif /* GKHWebImageDownloaderUtils_h */

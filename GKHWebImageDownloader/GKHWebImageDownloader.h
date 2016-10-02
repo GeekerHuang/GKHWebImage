@@ -75,23 +75,7 @@
  * @return A cancellable GKHWebImageOperationProtocol
  */
 - (id<GKHWebImageOperationProtocol>)dowloadImageWithUrl: (NSURL *)url
-                                              completed: (GKHWebImageDownloaderCompletedBlock)completedBlock;
-
-/**
- * Creates a GKHWebImageDownloader async downloader instance with a given URL
- *
- * The delegate will be informed when the image is finish downloaded or an error has happen.
- *
- *
- * @param url            The URL to the image to download
- * @param options        The options to be used for this download
- * @param completedBlock A block called once the download is completed
- *
- * @return A cancellable GKHWebImageOperationProtocol
- */
-- (id<GKHWebImageOperationProtocol>)dowloadImageWithUrl: (NSURL *)url
-                                                options: (GKHWebImageDownloaderOptions)options
-                                              completed: (GKHWebImageDownloaderCompletedBlock)completedBlock;
+                                             completion: (GKHWebImageDownloaderCompletedBlock)completionBlock;
 
 /**
  * Creates a GKHWebImageDownloader async downloader instance with a given URL
@@ -109,7 +93,7 @@
 - (id<GKHWebImageOperationProtocol>)dowloadImageWithUrl: (NSURL *)url
                                                 options: (GKHWebImageDownloaderOptions)options
                                                progress: (GKHWebImageDownloaderProgressBlock)progressBlock
-                                              completed: (GKHWebImageDownloaderCompletedBlock)completedBlock;
+                                             completion: (GKHWebImageDownloaderCompletedBlock)completionBlock;
 
 /**
  * Creates a GKHWebImageDownloader async downloader instance with a given URL
@@ -129,7 +113,7 @@
                                                 options: (GKHWebImageDownloaderOptions)options
                                        operatioPriority: (GKHWebImageDownloaderOperationQueuePriority)operationPriority
                                                progress: (GKHWebImageDownloaderProgressBlock)progressBlock
-                                              completed: (GKHWebImageDownloaderCompletedBlock)completedBlock;
+                                             completion: (GKHWebImageDownloaderCompletedBlock)completionBlock;
 
 
 /**
