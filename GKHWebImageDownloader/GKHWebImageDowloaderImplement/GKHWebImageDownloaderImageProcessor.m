@@ -63,13 +63,20 @@ FOUNDATION_STATIC_INLINE UIImageOrientation orientationFromPropertyValue(NSInteg
     [_imageData appendData:other];
 }
 
-- (NSMutableData *)imageData
+- (void)setExpectedContentLength:(unsigned long long)expectedContentLength
 {
-    if (nil == _imageData) {
-        _imageData = [NSMutableData new];
-    }
-    
-    return _imageData;
+    _expectedContentLength = expectedContentLength;
+    [self setUpImageData];
+}
+
+- (unsigned long long)receivedLength
+{
+    return _imageData.length;
+}
+
+- (void)setUpImageData
+{
+    _imageData = [[NSMutableData alloc] initWithCapacity:_expectedContentLength];
 }
 
 - (void)setImagePropertyValueWithImageSource:(CGImageSourceRef)imageSource
@@ -192,11 +199,11 @@ FOUNDATION_STATIC_INLINE UIImageOrientation orientationFromPropertyValue(NSInteg
     GKHWebImageDownloaderState state = GKHWebImageDownloaderFailure;
     
     if (_imageData.length <= 0) {
-        error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorCode:GKHWebImageDownloaderCompletedImageHasNoneData code:GKHWebImageDownloaderDefaultCode];
+        error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorType:GKHWebImageDownloaderCompletedImageHasNoneData errorCode:GKHWebImageDownloaderDefaultCode];
     } else {
         image =  [self imageForCompletedBlock];
         if (CGSizeEqualToSize(image.size, CGSizeZero)) {
-            error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorCode:GKHWebImageDownloaderCompletedImageHasNonePixel code:GKHWebImageDownloaderDefaultCode];
+            error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorType:GKHWebImageDownloaderCompletedImageHasNonePixel errorCode:GKHWebImageDownloaderDefaultCode];
             state = GKHWebImageDownloaderFailure;
             image = nil;
         } else {
@@ -210,16 +217,16 @@ FOUNDATION_STATIC_INLINE UIImageOrientation orientationFromPropertyValue(NSInteg
 
 }
 
-- (GKHWebImageDowloaderCompletedBlock *)completedBlockWithError:(NSError *)error state:(GKHWebImageDownloaderState)state
++ (GKHWebImageDowloaderCompletedBlock *)cancelBlockWithError:(NSError *)error imageURL:(NSURL *)imageURL
 {
-    GKHWebImageDowloaderCompletedBlock *completedImage = [[GKHWebImageDowloaderCompletedBlock alloc] initWithReceivedSize:_imageData.length expectedContentLength:_expectedContentLength image:nil imageData:nil    imageURL:_imageURL state:state error:error];
+    GKHWebImageDowloaderCompletedBlock *completedImage = [[GKHWebImageDowloaderCompletedBlock alloc] initWithReceivedSize:0     expectedContentLength:0 image:nil imageData:nil imageURL:imageURL state:GKHWebImageDownloaderCancel error:error];
     
     return completedImage;
 }
 
-+ (GKHWebImageDowloaderCompletedBlock *)completedBlockWithError:(NSError *)error state:(GKHWebImageDownloaderState)state
++ (GKHWebImageDowloaderCompletedBlock *)failureBlockWithError:(NSError *)error imageURL:(NSURL *)imageURL
 {
-    GKHWebImageDowloaderCompletedBlock *completedImage = [[GKHWebImageDowloaderCompletedBlock alloc] initWithReceivedSize:0     expectedContentLength:0 image:nil imageData:nil imageURL:nil state:state error:error];
+    GKHWebImageDowloaderCompletedBlock *completedImage = [[GKHWebImageDowloaderCompletedBlock alloc] initWithReceivedSize:0     expectedContentLength:0 image:nil imageData:nil imageURL:imageURL state:GKHWebImageDownloaderFailure error:error];
     
     return completedImage;
 }

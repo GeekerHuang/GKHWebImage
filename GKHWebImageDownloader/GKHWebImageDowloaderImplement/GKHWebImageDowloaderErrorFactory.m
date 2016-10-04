@@ -12,7 +12,7 @@ static NSString *const GKHWebImageDownloaderDomain = @"GKHWebImageDownloaderDoma
 
 @implementation GKHWebImageDowloaderErrorFactory
 
-- (NSError *)errorWithCompletedErrorCode:(GKHWebImageDownloaderCompletedErrorCode)completedErrorCode code: (NSInteger)code
++ (NSError *)errorWithCompletedErrorType:(GKHWebImageDownloaderCompletedErrorCode)completedErrorCode errorCode: (NSInteger)code
 {
     if (GKHWebImageDownloaderCompletedNone == completedErrorCode) {
         return nil;
@@ -43,10 +43,19 @@ static NSString *const GKHWebImageDownloaderDomain = @"GKHWebImageDownloaderDoma
                                     userInfo:@{NSLocalizedDescriptionKey : @"Downloaded image has 0 pixels"}];
             break;
         case GKHWebImageDownloaderCompletedImageHasNoneData:
-            error = [NSError errorWithDomain:domain code:code userInfo:@{NSLocalizedDescriptionKey : @"Image data is nil"}];
+            error = [NSError errorWithDomain:domain
+                                        code:code
+                                    userInfo:@{NSLocalizedDescriptionKey : @"Image data is nil"}];
             break;
         case GKHWebImageDownloaderCompletedURLIsNUll:
-            error = [NSError errorWithDomain:domain code:code userInfo:@{NSLocalizedDescriptionKey : @"URL is nil"}];
+            error = [NSError errorWithDomain:domain
+                                        code:code
+                                    userInfo:@{NSLocalizedDescriptionKey : @"URL is nil"}];
+            break;
+        case GKHWebImageDownloaderCompletedCacheError:
+            error = [NSError errorWithDomain:domain
+                                        code:code
+                                    userInfo:@{NSLocalizedDescriptionKey : @"Reponse from cache,But should ignore cache"}];
             break;
         default:
             break;

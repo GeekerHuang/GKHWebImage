@@ -12,6 +12,7 @@
 #import <ImageIO/ImageIO.h>
 #import "GKHWebImageDecode.h"
 #import "GKHWebImageDownloaderImageProcessor.h"
+#import "GKHWebImageDowloaderErrorFactory.h"
 
 @interface GKHWebImageDownloaderOperation (/*private*/)<NSURLSessionDataDelegate, NSURLSessionTaskDelegate>
 {
@@ -136,8 +137,8 @@
     
     if (nil != _dataTask) {
         if(nil != _completedBlock) {
-            NSError *error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorCode:GKHWebImageDownloaderCompletedNoneRequest code:GKHWebImageDownloaderDefaultCode];
-            _completedBlock([_downloaderImageProcessor completedBlockWithError:error state:GKHWebImageDownloaderFailure]);
+            NSError *error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorType:GKHWebImageDownloaderCompletedNoneRequest errorCode:GKHWebImageDownloaderDefaultCode];
+            _completedBlock([GKHWebImageDownloaderImageProcessor failureBlockWithError:error imageURL:_downloaderImageProcessor.imageURL]);
             [self done];
         }
     }
@@ -158,6 +159,8 @@
             waitUntilDone:NO];
 }
 
+#pragma mark - Private Method
+
 - (void)cancelDownloaderRequest
 {
     dispatch_semaphore_wait(_semaphore, DISPATCH_TIME_FOREVER);
@@ -170,8 +173,8 @@
     [super cancel];
     
     if (nil != _completedBlock) {
-        NSError *error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorCode:GKHWebImageDownloaderCompletedNone code:GKHWebImageDownloaderDefaultCode];
-        _completedBlock([_downloaderImageProcessor completedBlockWithError:error state:GKHWebImageDownloaderCancel]);
+        NSError *error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorType:GKHWebImageDownloaderCompletedNone errorCode:GKHWebImageDownloaderDefaultCode];
+        _completedBlock([GKHWebImageDownloaderImageProcessor cancelBlockWithError:error imageURL:_downloaderImageProcessor.imageURL]);
     }
     
     if (nil != _dataTask) {
@@ -242,15 +245,15 @@ didReceiveResponse:(NSURLResponse *)response
                 }
                 
                 if (nil != _completedBlock) {
-                    NSError *error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorCode:GKHWebImageDownloaderCompletedErrorStatusCode code:[((NSHTTPURLResponse *)response) statusCode]];
-                    _completedBlock([_downloaderImageProcessor completedBlockWithError:error state:GKHWebImageDownloaderFailure]);
+                    NSError *error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorType:GKHWebImageDownloaderCompletedErrorStatusCode errorCode:[((NSHTTPURLResponse *)response) statusCode]];
+                    _completedBlock([GKHWebImageDownloaderImageProcessor failureBlockWithError:error imageURL:_downloaderImageProcessor.imageURL]);
                 }
                 [self done];
             }
         } else {
             if (nil != _completedBlock) {
-                NSError *error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorCode:GKHWebImageDownloaderCompletedNotHttpProtocol code:[((NSHTTPURLResponse *)response) statusCode]];
-                _completedBlock([_downloaderImageProcessor completedBlockWithError:error state:GKHWebImageDownloaderFailure]);
+                NSError *error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorType:GKHWebImageDownloaderCompletedNotHttpProtocol errorCode:[((NSHTTPURLResponse *)response) statusCode]];
+                _completedBlock([GKHWebImageDownloaderImageProcessor failureBlockWithError:error imageURL:_downloaderImageProcessor.imageURL]);
             }
             [self done];
         }
@@ -353,7 +356,7 @@ didCompleteWithError:(nullable NSError *)error
         
         if (error) {
             if (nil != _completedBlock) {
-                _completedBlock([_downloaderImageProcessor completedBlockWithError:error state:GKHWebImageDownloaderFailure]);
+                _completedBlock([GKHWebImageDownloaderImageProcessor failureBlockWithError:error imageURL:_downloaderImageProcessor.imageURL]);
             }
         } else {
             GKHWebImageDownloaderCompletedBlock completionBlock = _completedBlock;
@@ -364,7 +367,8 @@ didCompleteWithError:(nullable NSError *)error
             
             if (nil == completionBlock) {
                 if ([self shouldIgnoreCachedResponse] && _responseFromCache) {
-                    _completedBlock([_downloaderImageProcessor completedBlockWithError:nil state:GKHWebImageDownloaderFailure]);
+                    NSError *error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorType:GKHWebImageDownloaderCompletedCacheError errorCode:GKHWebImageDownloaderDefaultCode];
+                    _completedBlock([GKHWebImageDownloaderImageProcessor failureBlockWithError:error imageURL:_downloaderImageProcessor.imageURL]);
                 } else {
                     completionBlock([_downloaderImageProcessor completedBlock]);
                 }

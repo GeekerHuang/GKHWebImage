@@ -210,8 +210,8 @@ FOUNDATION_STATIC_INLINE NSOperationQueuePriority getQueuePriority(GKHWebImageDo
 {
     if (nil == url) {
         if(nil == completionBlock) {
-            NSError *error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorCode:GKHWebImageDownloaderCompletedURLIsNUll code:GKHWebImageDownloaderDefaultCode];
-            GKHWebImageDowloaderCompletedBlock *completedBlockObject = [GKHWebImageDownloaderImageProcessor completedBlockWithError:error state:GKHWebImageDownloaderFailure];
+            NSError *error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorType:GKHWebImageDownloaderCompletedURLIsNUll errorCode:GKHWebImageDownloaderDefaultCode];
+            GKHWebImageDowloaderCompletedBlock *completedBlockObject = [GKHWebImageDownloaderImageProcessor failureBlockWithError:error imageURL:url];
             completionBlock(completedBlockObject);
         }
     }

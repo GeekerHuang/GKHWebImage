@@ -15,11 +15,15 @@ typedef NS_ENUM(NSUInteger, GKHWebImageDownloaderCompletedErrorCode){
     GKHWebImageDownloaderCompletedNotHttpProtocol,
     GKHWebImageDownloaderCompletedImageHasNonePixel,
     GKHWebImageDownloaderCompletedImageHasNoneData,
-    GKHWebImageDownloaderCompletedURLIsNUll
+    GKHWebImageDownloaderCompletedURLIsNUll,
+    GKHWebImageDownloaderCompletedCacheError
 };
+
+static const NSInteger GKHWebImageDownloaderDefaultCode = 0;
 
 @interface GKHWebImageDowloaderErrorFactory : NSObject
 
-+ (NSError *)errorWithCompletedErrorCode:(GKHWebImageDownloaderCompletedErrorCode)completedErrorCode code: (NSInteger)code;
++ (NSError *)errorWithCompletedErrorType:(GKHWebImageDownloaderCompletedErrorCode)completedErrorCode errorCode: (NSInteger)code;
+
 
 @end
