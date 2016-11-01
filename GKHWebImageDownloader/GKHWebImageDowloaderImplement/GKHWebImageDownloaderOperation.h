@@ -7,8 +7,8 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "GKHWebImageDownloaderUtils.h"
 #import "GKHWebImageOperationProtocol.h"
+#import "GKHWebImageDownloader.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

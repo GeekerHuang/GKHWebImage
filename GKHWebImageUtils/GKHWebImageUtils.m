@@ -8,4 +8,3 @@
 
 #import <Foundation/Foundation.h>
 
-float kGKHWebImageTimeoutRequest = 15.0;

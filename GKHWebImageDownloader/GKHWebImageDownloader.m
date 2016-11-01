@@ -12,45 +12,56 @@
 #import "GKHWebImageDowloaderErrorFactory.h"
 #import "GKHWebImageDownloaderImageProcessor.h"
 
-typedef void(^GKHWebImageNoParamsBlock)();
-static NSString *const downloaderProgressCallBackKey = @"progress";
-static NSString *const downloaderCompletionCallBackKey = @"completion";
+@implementation GKHWebImageDowloaderProgressiveObject
 
-FOUNDATION_STATIC_INLINE NSOperationQueuePriority getQueuePriority(GKHWebImageDownloaderOperationQueuePriority gkhQueuePriority)
+- (instancetype)initWithReceivedSize:(unsigned long long)receivedSize
+               expectedContentLength:(unsigned long long)expectedContentLength
+                               image:(UIImage *)image
+                           imageData:(NSData *)imageData
+                            imageURL:(NSURL *)imageURL
 {
-    NSOperationQueuePriority queuePriority = NSOperationQueuePriorityNormal;
-    switch (gkhQueuePriority) {
-        case GKHWebImageOperationDownloaderQueuePriorityVeryLow:
-        {
-            queuePriority = NSOperationQueuePriorityVeryLow;
-        }
-            break;
-        case GKHWebImageOperationDownloaderQueuePriorityLow:
-        {
-            queuePriority = NSOperationQueuePriorityVeryLow;
-        }
-            break;
-        case GKHWebImageOperationDownloaderQueuePriorityNormal:
-        {
-            queuePriority = NSOperationQueuePriorityNormal;
-        }
-            break;
-        case GKHWebImageOperationDownloaderQueuePriorityHigh:
-        {
-            queuePriority = NSOperationQueuePriorityVeryHigh;
-        }
-            break;
-        case GKHWebImageOperationDownloaderQueuePriorityVeryHigh:
-        {
-            queuePriority = NSOperationQueuePriorityVeryHigh;
-        }
-            break;
-        default:
-            break;
+    if (self = [super init]) {
+        _receivedSize = receivedSize;
+        _expectedContentLength = expectedContentLength;
+        _image = image;
+        _imageData = imageData;
+        _imageURL = imageURL;
     }
     
-    return queuePriority;
+    return self;
 }
+
+@end
+
+@implementation GKHWebImageDowloaderCompletedObject
+
+- (instancetype)initWithReceivedSize:(unsigned long long)receivedSize
+               expectedContentLength:(unsigned long long)expectedContentLength
+                               image:(UIImage *)image
+                           imageData:(NSData *)imageData
+                            imageURL:(NSURL *)imageURL
+                               state:(GKHWebImageDownloaderState)state
+                               error:(NSError *)error
+{
+    if (self = [super init]) {
+        _receivedSize = receivedSize;
+        _expectedContentLength = expectedContentLength;
+        _image = image;
+        _imageData = imageData;
+        _imageURL = imageURL;
+        _state = state;
+        _error = error;
+    }
+    
+    return self;
+}
+
+@end
+
+
+typedef void(^GKHWebImageNoParamsBlock)();
+static NSString *const downloaderProgressCallBackKey = @"GKHProgress";
+static NSString *const downloaderCompletionCallBackKey = @"GKHCompletion";
 
 @interface GKHWebImageDownloader (/*private*/)<NSURLSessionDataDelegate, NSURLSessionTaskDelegate>
 
@@ -108,7 +119,7 @@ FOUNDATION_STATIC_INLINE NSOperationQueuePriority getQueuePriority(GKHWebImageDo
 {
     return [self dowloadImageWithUrl:url
                              options:GKHWebImageDownloaderDefault
-                    operatioPriority:GKHWebImageOperationDownloaderQueuePriorityNormal
+                    operatioPriority:NSOperationQueuePriorityNormal
                             progress:nil
                           completion:completionBlock];
 }
@@ -120,14 +131,14 @@ FOUNDATION_STATIC_INLINE NSOperationQueuePriority getQueuePriority(GKHWebImageDo
 {
     return [self dowloadImageWithUrl:url
                              options:options
-                    operatioPriority:GKHWebImageOperationDownloaderQueuePriorityNormal
+                    operatioPriority:NSOperationQueuePriorityNormal
                             progress:progressBlock
                           completion:completionBlock];
 }
 
 - (id<GKHWebImageOperationProtocol>)dowloadImageWithUrl: (NSURL *)url
                                                 options: (GKHWebImageDownloaderOptions)options
-                                       operatioPriority: (GKHWebImageDownloaderOperationQueuePriority)operationPriority
+                                       operatioPriority: (NSOperationQueuePriority)operationPriority
                                                progress: (GKHWebImageDownloaderProgressBlock)progressBlock
                                               completion: (GKHWebImageDownloaderCompletedBlock)completionBlock
 {
@@ -144,7 +155,7 @@ FOUNDATION_STATIC_INLINE NSOperationQueuePriority getQueuePriority(GKHWebImageDo
         
         NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL: url cachePolicy: cachePolicy timeoutInterval: dowloadTimeout];
         
-        GKHWebImageDownloaderOperation *downloaderOperation =[[GKHWebImageDownloaderOperation alloc] initWithRequest:request inSession: wself.session options:options progress:^(GKHWebImageDowloaderProgressiveBlock *progressiveState) {
+        GKHWebImageDownloaderOperation *downloaderOperation =[[GKHWebImageDownloaderOperation alloc] initWithRequest:request inSession: wself.session options:options progress:^(GKHWebImageDowloaderProgressiveObject *progressiveState) {
             GKHWebImageDownloader *sself = wself;
             if (sself) {
                 __block NSMutableArray *callBacksForUrl = nil;
@@ -159,12 +170,12 @@ FOUNDATION_STATIC_INLINE NSOperationQueuePriority getQueuePriority(GKHWebImageDo
                     }
                 }];
             }
-        } completed:^(GKHWebImageDowloaderCompletedBlock *completedState) {
+        } completed:^(GKHWebImageDowloaderCompletedObject *completedState) {
             GKHWebImageDownloader *sself = wself;
             if (sself) {
-                BOOL success = GKHWebImageDownloaderSuccess == completedState.state;
-                BOOL failure = GKHWebImageDownloaderFailure == completedState.state;
-                BOOL cancel = GKHWebImageDownloaderCancel == completedState.state;
+                BOOL success = (GKHWebImageDownloaderSuccess == completedState.state);
+                BOOL failure = (GKHWebImageDownloaderFailure == completedState.state);
+                BOOL cancel = (GKHWebImageDownloaderCancel == completedState.state);
                 if (success || failure) {
                     __block NSMutableArray *callBacksForUrl = nil;
                     dispatch_barrier_sync(sself.queue, ^{
@@ -185,16 +196,16 @@ FOUNDATION_STATIC_INLINE NSOperationQueuePriority getQueuePriority(GKHWebImageDo
                 }
         }
             
-            downloaderOperation.credential = wself.credendial();
-            downloaderOperation.queuePriority = getQueuePriority(operationPriority);
-            downloaderOperation.isDecompressImage = wself.isDecompressImage;
+        downloaderOperation.credential = wself.credendial();
+        downloaderOperation.queuePriority = operationPriority;
+        downloaderOperation.isDecompressImage = wself.isDecompressImage;
             
-            [wself.downloadQueue addOperation:downloaderOperation];
-            if (wself.executionOrder == GKHWebImageDownloaderLIFOExecutionOrder) {
+        [wself.downloadQueue addOperation:downloaderOperation];
+        if (wself.executionOrder == GKHWebImageDownloaderLIFOExecutionOrder) {
                 // Emulate LIFO execution order by systematically adding new operations as last operation's dependency
                 [wself.lastAddedOperation addDependency:downloaderOperation];
                 wself.lastAddedOperation = downloaderOperation;
-            }
+        }
 
         }];
         
@@ -209,9 +220,9 @@ FOUNDATION_STATIC_INLINE NSOperationQueuePriority getQueuePriority(GKHWebImageDo
              createBlock:(GKHWebImageNoParamsBlock)createBlock
 {
     if (nil == url) {
-        if(nil == completionBlock) {
+        if(nil != completionBlock) {
             NSError *error = [GKHWebImageDowloaderErrorFactory errorWithCompletedErrorType:GKHWebImageDownloaderCompletedURLIsNUll errorCode:GKHWebImageDownloaderDefaultCode];
-            GKHWebImageDowloaderCompletedBlock *completedBlockObject = [GKHWebImageDownloaderImageProcessor failureBlockWithError:error imageURL:url];
+            GKHWebImageDowloaderCompletedObject *completedBlockObject = [GKHWebImageDownloaderImageProcessor failureBlockWithError:error imageURL:url];
             completionBlock(completedBlockObject);
         }
     }

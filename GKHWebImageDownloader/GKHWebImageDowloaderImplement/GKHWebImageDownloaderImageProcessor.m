@@ -159,14 +159,14 @@ FOUNDATION_STATIC_INLINE UIImageOrientation orientationFromPropertyValue(NSInteg
     return progressiveImage;
 }
 
-- (GKHWebImageDowloaderProgressiveBlock *)progressiveBlock
+- (GKHWebImageDowloaderProgressiveObject *)progressiveBlock
 {
     unsigned long long receivedSize = _imageData.length;
     unsigned long long expectedContentLength = _expectedContentLength;
     UIImage *image = [self imageForProgressive];
     NSData *imageData = _imageData;
     NSURL *imageURL = _imageURL;
-    GKHWebImageDowloaderProgressiveBlock *progressiveImage = [[GKHWebImageDowloaderProgressiveBlock alloc]
+    GKHWebImageDowloaderProgressiveObject *progressiveImage = [[GKHWebImageDowloaderProgressiveObject alloc]
                 initWithReceivedSize:receivedSize
                expectedContentLength:expectedContentLength
                                image:image
@@ -192,7 +192,7 @@ FOUNDATION_STATIC_INLINE UIImageOrientation orientationFromPropertyValue(NSInteg
     return image;
 }
 
-- (GKHWebImageDowloaderCompletedBlock *)completedBlock
+- (GKHWebImageDowloaderCompletedObject *)completedBlock
 {
     NSError *error = nil;
     UIImage *image = nil;
@@ -211,22 +211,22 @@ FOUNDATION_STATIC_INLINE UIImageOrientation orientationFromPropertyValue(NSInteg
         }
     }
     
-    GKHWebImageDowloaderCompletedBlock *completedImage = [[GKHWebImageDowloaderCompletedBlock alloc] initWithReceivedSize:_imageData.length expectedContentLength:_expectedContentLength image:image imageData:_imageData  imageURL:_imageURL state:state error:error];
+    GKHWebImageDowloaderCompletedObject *completedImage = [[GKHWebImageDowloaderCompletedObject alloc] initWithReceivedSize:_imageData.length expectedContentLength:_expectedContentLength image:image imageData:_imageData  imageURL:_imageURL state:state error:error];
     
     return completedImage;
 
 }
 
-+ (GKHWebImageDowloaderCompletedBlock *)cancelBlockWithError:(NSError *)error imageURL:(NSURL *)imageURL
++ (GKHWebImageDowloaderCompletedObject *)cancelBlockWithError:(NSError *)error imageURL:(NSURL *)imageURL
 {
-    GKHWebImageDowloaderCompletedBlock *completedImage = [[GKHWebImageDowloaderCompletedBlock alloc] initWithReceivedSize:0     expectedContentLength:0 image:nil imageData:nil imageURL:imageURL state:GKHWebImageDownloaderCancel error:error];
+    GKHWebImageDowloaderCompletedObject *completedImage = [[GKHWebImageDowloaderCompletedObject alloc] initWithReceivedSize:0     expectedContentLength:0 image:nil imageData:nil imageURL:imageURL state:GKHWebImageDownloaderCancel error:error];
     
     return completedImage;
 }
 
-+ (GKHWebImageDowloaderCompletedBlock *)failureBlockWithError:(NSError *)error imageURL:(NSURL *)imageURL
++ (GKHWebImageDowloaderCompletedObject *)failureBlockWithError:(NSError *)error imageURL:(NSURL *)imageURL
 {
-    GKHWebImageDowloaderCompletedBlock *completedImage = [[GKHWebImageDowloaderCompletedBlock alloc] initWithReceivedSize:0     expectedContentLength:0 image:nil imageData:nil imageURL:imageURL state:GKHWebImageDownloaderFailure error:error];
+    GKHWebImageDowloaderCompletedObject *completedImage = [[GKHWebImageDowloaderCompletedObject alloc] initWithReceivedSize:0     expectedContentLength:0 image:nil imageData:nil imageURL:imageURL state:GKHWebImageDownloaderFailure error:error];
     
     return completedImage;
 }

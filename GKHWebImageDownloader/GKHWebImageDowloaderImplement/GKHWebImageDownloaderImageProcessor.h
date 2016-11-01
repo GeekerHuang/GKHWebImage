@@ -7,8 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "GKHWebImageDowloaderProgressiveBlock.h"
-#import "GKHWebImageDowloaderCompletedBlock.h"
+#import "GKHWebImageDownloader.h"
 
 @interface GKHWebImageDownloaderImageProcessor : NSObject
 
@@ -19,10 +18,10 @@
 
 - (void)appendData:(NSData *)other;
 
-- (GKHWebImageDowloaderProgressiveBlock *)progressiveBlock;
-- (GKHWebImageDowloaderCompletedBlock *)completedBlock;
+- (GKHWebImageDowloaderProgressiveObject *)progressiveBlock;
+- (GKHWebImageDowloaderCompletedObject *)completedBlock;
 
-+ (GKHWebImageDowloaderCompletedBlock *)cancelBlockWithError:(NSError *)error imageURL:(NSURL *)imageURL;
-+ (GKHWebImageDowloaderCompletedBlock *)failureBlockWithError:(NSError *)error imageURL:(NSURL *)imageURL;
++ (GKHWebImageDowloaderCompletedObject *)cancelBlockWithError:(NSError *)error imageURL:(NSURL *)imageURL;
++ (GKHWebImageDowloaderCompletedObject *)failureBlockWithError:(NSError *)error imageURL:(NSURL *)imageURL;
 
 @end

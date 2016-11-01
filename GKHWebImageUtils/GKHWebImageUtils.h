@@ -9,7 +9,6 @@
 #ifndef GKHWebImageUtils_h
 #define GKHWebImageUtils_h
 
-extern const float kGKHWebImageTimeoutRequest;
 
 #define GKHWebImageCreateLock dispatch_semaphore_create(1)
 #define GKHWebImageLock(semaphore)  dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
